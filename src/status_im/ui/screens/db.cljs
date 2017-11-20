@@ -31,10 +31,10 @@
              :group/contact-groups       {}
              :group/selected-contacts    #{}
              :chats                      {}
-             :current-chat-id            constants/console-chat-id 
+             :current-chat-id            constants/console-chat-id
              :selected-participants      #{}
              :discoveries                {}
-             :discover-search-tags       '()
+             :discover-search-tags       #{}
              :discover-current-dapp      {}
              :tags                       []
              :sync-state                 :done
@@ -158,9 +158,9 @@
                   :chat/chat-ui-props
                   :chat/chat-list-ui-props
                   :chat/layout-height
-                  :chat/expandable-view-height-to-value 
+                  :chat/expandable-view-height-to-value
                   :chat/message-data
-                  :chat/message-status 
+                  :chat/message-status
                   :chat/selected-participants
                   :chat/chat-loaded-callbacks 
                   :chat/public-group-topic
@@ -176,7 +176,6 @@
                   :discoveries/tags
                   :discoveries/current-tag
                   :discoveries/request-discoveries-timer
-                  :discoveries/new-discover
                   :wallet/wallet
                   :wallet/wallet.transactions
                   :wallet/wallet-selected-asset

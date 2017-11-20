@@ -7,7 +7,6 @@
             [status-im.data-store.realm.schemas.account.v12.pending-message :as pending-message]
             [status-im.data-store.realm.schemas.account.v1.processed-message :as processed-message]
             [status-im.data-store.realm.schemas.account.v19.request :as request]
-            [status-im.data-store.realm.schemas.account.v1.tag :as tag]
             [status-im.data-store.realm.schemas.account.v19.user-status :as user-status]
             [status-im.data-store.realm.schemas.account.v5.contact-group :as contact-group]
             [status-im.data-store.realm.schemas.account.v5.group-contact :as group-contact]
@@ -23,7 +22,6 @@
              pending-message/schema
              processed-message/schema
              request/schema
-             tag/schema
              user-status/schema
              contact-group/schema
              group-contact/schema
@@ -110,7 +108,7 @@
                         from       (aget msg "from")
                         msg-status (aget msg "message-status")
                         statuses   (aget msg "user-statuses")]
-                    (when statuses 
+                    (when statuses
                       (.map statuses (fn [status _ _]
                                        (aset status "message-id" message-id)
                                        (aset status "chat-id"    chat-id)))
