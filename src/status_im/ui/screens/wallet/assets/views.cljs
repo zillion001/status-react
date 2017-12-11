@@ -15,7 +15,9 @@
             [status-im.ui.screens.wallet.transactions.views :as transactions]
             [status-im.utils.utils :as utils]
             [status-im.ui.components.chat-icon.styles :as chat-icon.styles]
-            [status-im.utils.money :as money]))
+            [status-im.utils.money :as money]
+            [status-im.ui.components.icons.vector-icons :as vector-icons]
+            [clojure.string :as string]))
 
 
 (defview my-token-tab-title [active?]
@@ -60,10 +62,83 @@
                :style      (assets.styles/tab-title active?)}
    (i18n/label :t/wallet-market-value)])
 
+(defn invert-y [height data]
+  (map #(- height %) data))
+
+(defn normalize-values [height data]
+  (let [highest (reduce max data)]
+    (map #(/ (* % height) highest) data)))
+
+(defn add-x-values [data]
+  (map vector (iterate #(+ % 10) 0) data))
+
+(defn add-closing-point [height data]
+  (let [last-x (-> data last first)]
+   (concat data [[last-x height]])))
+
+(defn serialize-points [data]
+  (string/join " " (map #(string/join "," %) data)))
+
+(defn line-chart [{:keys [width height data x-labels y-labels]}]
+  (let [prepared (->> data
+                      (normalize-values height)
+                      (invert-y height)
+                      add-x-values)]
+    [vector-icons/svg {:width  (+ width  50)
+                       :height (+ height 30)}
+     [vector-icons/defs
+      [vector-icons/linear-gradient {:id "line-chart-gradient" :x1 0 :y1 0 :x2 0 :y2 height}
+       [vector-icons/stop {:offset "0%" :stop-color "#8397dd"}]
+       [vector-icons/stop {:offset "100%" :stop-color "#eaeefb"}]]]
+     [vector-icons/polyline {:width        width
+                             :height       height
+                             :fill         :none
+                             :stroke       "#4360df"
+                             :stroke-width 3
+                             :points       (serialize-points prepared)}]
+     [vector-icons/polygon {:width  width
+                            :height height
+                            :fill   "url(#line-chart-gradient)"
+                            :stroke :none
+                            :points (->> prepared
+                                         (add-closing-point height)
+                                         serialize-points)}]
+     (map-indexed (fn [index x-axis-legend-item]
+                    ^{:key index}
+                    [vector-icons/text {:x           (* index (/ (- width 10) (dec (count x-labels))))
+                                        :y           (+ height 10)
+                                        :font-size   12
+                                        :fill        "#8a95bc"
+                                        :text-anchor (if (zero? index) :start :middle)} x-axis-legend-item])
+                  x-labels)
+     (map-indexed (fn [index y-axis-legend-item]
+                    ^{:key index}
+                    [vector-icons/text {:x                  (+ width 10)
+                                        :y                  (- height (* index (/ height (dec (count y-labels)))))
+                                        :font-size          12
+                                        :fill               "#8a95bc"
+                                        :alignment-baseline :middle} y-axis-legend-item])
+                  y-labels)]))
+
+(defn create-y-labels [num-of-labels data]
+  (let [lowest (reduce min data)
+        highest (reduce max data)
+        step (/ (- highest lowest) num-of-labels)]
+    (map #(if (zero? %) "" (str %))
+         (range lowest (+ step highest) step))))
+
 (defn market-value-tab-content []
-  [react/view
-   [react/text
-    "Market value goes here"]])
+  (let [data [0 40 32 50 120 20 35 17 48 60
+              90 80 71 35 20 60 150 63 85 36
+              0 40 32 50 120 20 35 17 48 60]]
+    [react/view {:flex             1
+                 :padding-top      30
+                 :background-color "#e8ecf8"}
+     [line-chart {:width    300
+                  :height   100
+                  :x-labels ["Nov 8" "Nov 18" "Nov 28" "Dec 8"]
+                  :y-labels (create-y-labels 5 data)
+                  :data     data}]]))
 
 (def tabs-list
   [{:view-id :wallet-my-token

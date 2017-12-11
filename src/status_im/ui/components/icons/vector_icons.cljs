@@ -20,6 +20,11 @@
 (def g (get-class "G"))
 (def rect (get-class "Rect"))
 (def path (get-class "Path"))
+(def polyline (get-class "Polyline"))
+(def polygon (get-class "Polygon"))
+(def text (get-class "Text"))
+(def linear-gradient (get-class "LinearGradient"))
+(def stop (get-class "Stop"))
 (def use-def (get-class "Use"))
 (def defs (get-class "Defs"))
 
