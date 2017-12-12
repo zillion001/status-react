@@ -17,7 +17,8 @@
             [status-im.ui.components.chat-icon.styles :as chat-icon.styles]
             [status-im.utils.money :as money]
             [status-im.ui.components.icons.vector-icons :as vector-icons]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [status-im.utils.datetime :as datetime]))
 
 
 (defview my-token-tab-title [active?]
@@ -127,6 +128,9 @@
     (map #(if (zero? %) "" (str %))
          (range lowest (+ step highest) step))))
 
+(defn create-x-labels []
+  (map #(datetime/format-date "MMM dd" %) (datetime/last-n-days 30 6)))
+
 (defn market-value-tab-content []
   (let [data [0 40 32 50 120 20 35 17 48 60
               90 80 71 35 20 60 150 63 85 36
@@ -136,7 +140,7 @@
                  :background-color "#e8ecf8"}
      [line-chart {:width    300
                   :height   100
-                  :x-labels ["Nov 8" "Nov 18" "Nov 28" "Dec 8"]
+                  :x-labels (create-x-labels)
                   :y-labels (create-y-labels 5 data)
                   :data     data}]]))
 

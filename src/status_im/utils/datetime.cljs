@@ -1,15 +1,13 @@
 (ns status-im.utils.datetime
-  (:require [cljs-time.core :as t :refer [date-time plus days hours before?]]
-            [cljs-time.coerce :refer [from-long to-long from-date]]
-            [cljs-time.format :refer [formatters
-                                      formatter
-                                      unparse]]
-            [status-im.i18n :refer [label label-pluralize]]
-            [goog.string :as gstring]
+  (:require [cljs-time.core :as cljs-time]
+            [cljs-time.coerce :as coerce]
+            [cljs-time.format :as format]
+            [cljs-time.periodic :as periodic]
+            [status-im.i18n :as i18n]
             goog.string.format))
 
 (defn now []
-  (t/now))
+  (cljs-time/now))
 
 (def hour (* 1000 60 60))
 (def day (* hour 24))
@@ -19,56 +17,56 @@
             {:name :t/datetime-hour :limit 86400 :in-second 3600}
             {:name :t/datetime-day :limit nil :in-second 86400}])
 
-(def time-zone-offset (hours (- (/ (.getTimezoneOffset (js/Date.)) 60))))
+(def time-zone-offset (cljs-time/hours (- (/ (.getTimezoneOffset (js/Date.)) 60))))
 
 (defn to-short-str
   ([ms]
-   (to-short-str ms #(unparse (formatters :hour-minute) %)))
+   (to-short-str ms #(format/unparse (format/formatters :hour-minute) %)))
   ([ms today-format-fn]
-   (let [date      (from-long ms)
-         local     (plus date time-zone-offset)
-         today     (t/today-at-midnight)
-         yesterday (plus today (days -1))]
+   (let [date      (coerce/from-long ms)
+         local     (cljs-time/plus date time-zone-offset)
+         today     (cljs-time/today-at-midnight)
+         yesterday (cljs-time/plus today (cljs-time/days -1))]
      (cond
-       (before? date yesterday) (unparse (formatter "dd MMM hh:mm") local)
-       (before? date today) (label :t/datetime-yesterday)
+       (cljs-time/before? date yesterday) (format/unparse (format/formatter "dd MMM hh:mm") local)
+       (cljs-time/before? date today) (i18n/label :t/datetime-yesterday)
        :else (today-format-fn local)))))
 
 (defn timestamp->mini-date [ms]
-  (unparse (formatter "dd MMM") (-> ms
-                                    from-long
-                                    (plus time-zone-offset))))
+  (format/unparse (format/formatter "dd MMM") (-> ms
+                                                  coerce/from-long
+                                                  (cljs-time/plus time-zone-offset))))
 
 (defn timestamp->time [ms]
-  (unparse (formatter "HH:mm") (-> ms
-                                   from-long
-                                   (plus time-zone-offset))))
+  (format/unparse (format/formatter "HH:mm") (-> ms
+                                                 coerce/from-long
+                                                 (cljs-time/plus time-zone-offset))))
 
 (defn timestamp->date-key [ms]
-  (keyword (unparse (formatter "YYYYMMDD") (-> ms
-                                               from-long
-                                               (plus time-zone-offset)))))
+  (keyword (format/unparse (format/formatter "YYYYMMDD") (-> ms
+                                                             coerce/from-long
+                                                             (cljs-time/plus time-zone-offset)))))
 
 (defn timestamp->long-date [ms]
-  (keyword (unparse (formatter "MMM DD YYYY HH:mm:ss")
-                    (-> ms
-                        from-long
-                        (plus time-zone-offset)))))
+  (keyword (format/unparse (format/formatter "MMM DD YYYY HH:mm:ss")
+                           (-> ms
+                               coerce/from-long
+                               (cljs-time/plus time-zone-offset)))))
 
 (defn day-relative [ms]
   (when (pos? ms)
-    (to-short-str ms #(label :t/datetime-today))))
+    (to-short-str ms #(i18n/label :t/datetime-today))))
 
 (defn format-time-ago [diff unit]
-  (let [name (label-pluralize diff (:name unit))]
-    (label :t/datetime-ago-format {:ago (label :t/datetime-ago)
-                                   :number diff
-                                   :time-intervals name})))
+  (let [name (i18n/label-pluralize diff (:name unit))]
+    (i18n/label :t/datetime-ago-format {:ago            (i18n/label :t/datetime-ago)
+                                        :number         diff
+                                        :time-intervals name})))
 
 (defn time-ago [time]
-  (let [diff (t/in-seconds (t/interval time (t/now)))]
+  (let [diff (cljs-time/in-seconds (cljs-time/interval time (cljs-time/now)))]
     (if (< diff 60)
-      (label :t/active-online)
+      (i18n/label :t/active-online)
       (let [unit (first (drop-while #(and (>= diff (:limit %))
                                           (:limit %))
                                     units))]
@@ -78,18 +76,18 @@
             (format-time-ago unit))))))
 
 (defn to-date [ms]
-  (from-long ms))
+  (coerce/from-long ms))
 
 (defn now-ms []
-  (to-long (now)))
+  (coerce/to-long (now)))
 
 (defn format-date [format date]
-  (let [local (plus (from-date date) time-zone-offset)]
-    (unparse (formatter format) local)))
+  (let [local (cljs-time/plus (coerce/from-date date) time-zone-offset)]
+    (format/unparse (format/formatter format) local)))
 
 (defn get-ordinal-date [date]
-  (let [local (plus (from-date date) time-zone-offset)
-        day   (js/parseInt (unparse (formatter "d") local))
+  (let [local (cljs-time/plus (coerce/from-date date) time-zone-offset)
+        day   (js/parseInt (format/unparse (format/formatter "d") local))
         s     {0 "th"
                1 "st"
                2 "nd"
@@ -98,3 +96,8 @@
     (str day (or (s (mod (- m 20) 10))
                  (s m)
                  (s 0)))))
+
+(defn last-n-days [n step]
+  (let [end-date   (cljs-time/today-at-midnight)
+        start-date (cljs-time/minus end-date (cljs-time/days n))]
+    (periodic/periodic-seq start-date end-date (cljs-time/days step))))
