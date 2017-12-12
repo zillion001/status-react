@@ -139,6 +139,26 @@
 (defn create-x-labels []
   (map #(datetime/format-date "MMM dd" %) (datetime/last-n-days 30 6)))
 
+(defn double-row [title1 content1
+                  title2 content2]
+  [react/view {:flex-direction :row}
+   [components/section :half title1 content1]
+   [components/section :half title2 content2]])
+
+(defn wide-row [title content]
+  [react/view {:flex-direction :row}
+   [components/section :full title content]])
+
+(defn info-sheet []
+  [react/view
+   [double-row "Market cap" "230,019,822 USD"
+               "Volume 24h" "3,567,910 USD"]
+   [double-row "Circulating Supply" "1,104,590 STT"
+               "Total Supply"       "10,000,000 STT"]
+   [wide-row "Concept" "Status is a free (libre) and open source mobile client targeting Android & iOS built, entirely on Ethereum technologies."]
+   [double-row "Crowdsale opening date" "20. Jun 2017" nil nil]
+   [double-row "Crowdsale closing date" "22. Jun 2017" nil nil]])
+
 (defview market-value-tab-content []
   (letsubs [{:keys [usd-value]} [:token-balance]]
     (let [data [0 40 32 50 120 20 35 17 48 60
@@ -147,12 +167,14 @@
       [react/view {:flex             1
                    :padding-top      20
                    :background-color "#e8ecf8"}
-       [balance-display {:padding-left 16} usd-value (i18n/label :t/usd-currency) (i18n/label :t/value) 0.05]
-       [line-chart {:width    300
-                    :height   100
-                    :x-labels (create-x-labels)
-                    :y-labels (create-y-labels 5 data)
-                    :data     data}]])))
+       [react/scroll-view {}
+        [balance-display {:padding-left 16} usd-value (i18n/label :t/usd-currency) (i18n/label :t/value) 0.05]
+        [line-chart {:width    300
+                     :height   100
+                     :x-labels (create-x-labels)
+                     :y-labels (create-y-labels 5 data)
+                     :data     data}]
+        [info-sheet]]])))
 
 (def tabs-list
   [{:view-id :wallet-my-token

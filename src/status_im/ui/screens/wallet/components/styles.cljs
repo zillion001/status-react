@@ -185,3 +185,31 @@
 (def today-variation-negative
   (merge today-variation
          {:color styles/color-red-4}))
+
+(defnstyle section-container [flex-width]
+  {:flex             (condp = flex-width
+                       :half 0.5
+                       :full 1
+                       0)
+   :background-color styles/color-white
+   :android          {:elevation 2}})
+
+(def section-title-container
+  {:background-color styles/color-white
+   :padding          10})
+
+(defstyle section-title-text
+  {:color   styles/color-gray
+   :ios     {:font-size 14}
+   :android {:font-size 12}})
+
+(def section-body-container
+  {:background-color styles/color-white
+   :padding-left     10
+   :padding-right    10
+   :padding-bottom   16})
+
+(defstyle section-content-text
+  {:ios     {:font-size 17}
+   :android {:font-size 16
+             :color     styles/color-gray6}})

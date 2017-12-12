@@ -129,3 +129,12 @@
       (if change
         (str (when pos-change? "+") change "%")
         "-%")]]))
+
+(defn section [flex-width title content]
+  [react/view (styles/section-container flex-width)
+   [react/view styles/section-title-container
+    [react/text {:font  :small
+                 :style styles/section-title-text} title]]
+   [react/view styles/section-body-container
+    [react/text {:font :medium
+                 :style styles/section-content-text} content]]])
