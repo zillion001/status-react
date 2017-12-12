@@ -20,6 +20,19 @@
             [clojure.string :as string]
             [status-im.utils.datetime :as datetime]))
 
+(defn balance-display [style
+                       main-value-amount
+                       main-value-currency
+                       change-description change]
+  [react/view style
+   [react/view {:style assets.styles/main-value}
+    [react/text {:style assets.styles/main-value-amount} main-value-amount]
+    [react/text {:style assets.styles/main-value-currency} main-value-currency]]
+   [react/view {:style assets.styles/change}
+    [react/text {:style assets.styles/change-description}
+     change-description]
+    [components/change-display change]]])
+
 
 (defview my-token-tab-title [active?]
   (letsubs [ {:keys [symbol]} [:token-balance]]
@@ -27,21 +40,16 @@
                  :style      (assets.styles/tab-title active?)}
      (i18n/label :t/wallet-my-token {:symbol symbol})]))
 
+(defn- format-amount [amount decimals]
+  (money/to-fixed (money/token->unit (or amount (money/bignumber 0)) decimals)))
+
 (defview my-token-tab-content []
   (letsubs [syncing? [:syncing?]
-            {:keys [symbol
-                    amount
-                    decimals
-                    usd-value]} [:token-balance]]
+            {:keys [symbol amount decimals usd-value]} [:token-balance]]
     [react/view components.styles/flex
      [react/view {:style assets.styles/total-balance-container}
-      [react/view {:style assets.styles/total-balance}
-       [react/text {:style assets.styles/total-balance-value} (money/to-fixed (money/token->unit (or amount (money/bignumber 0)) decimals))]
-       [react/text {:style assets.styles/total-balance-currency} symbol]]
-      [react/view {:style assets.styles/value-variation}
-       [react/text {:style assets.styles/value-variation-title}
-        (str usd-value " " "USD")]
-       [components/change-display 0.05]]
+      [balance-display {}
+       (format-amount amount decimals) symbol (str usd-value " " (i18n/label :t/usd-currency)) 0.05]
       [react/view {:style (merge button.styles/buttons-container main.styles/buttons)}
        [button/button {:disabled?  syncing?
                        :on-press   #(utils/show-popup "TODO" "Not implemented yet!")
@@ -122,27 +130,29 @@
                   y-labels)]))
 
 (defn create-y-labels [num-of-labels data]
-  (let [lowest (reduce min data)
+  (let [lowest  (reduce min data)
         highest (reduce max data)
-        step (/ (- highest lowest) num-of-labels)]
+        step    (/ (- highest lowest) num-of-labels)]
     (map #(if (zero? %) "" (str %))
          (range lowest (+ step highest) step))))
 
 (defn create-x-labels []
   (map #(datetime/format-date "MMM dd" %) (datetime/last-n-days 30 6)))
 
-(defn market-value-tab-content []
-  (let [data [0 40 32 50 120 20 35 17 48 60
-              90 80 71 35 20 60 150 63 85 36
-              0 40 32 50 120 20 35 17 48 60]]
-    [react/view {:flex             1
-                 :padding-top      30
-                 :background-color "#e8ecf8"}
-     [line-chart {:width    300
-                  :height   100
-                  :x-labels (create-x-labels)
-                  :y-labels (create-y-labels 5 data)
-                  :data     data}]]))
+(defview market-value-tab-content []
+  (letsubs [{:keys [usd-value]} [:token-balance]]
+    (let [data [0 40 32 50 120 20 35 17 48 60
+                90 80 71 35 20 60 150 63 85 36
+                0 40 32 50 120 20 35 17 48 60]]
+      [react/view {:flex             1
+                   :padding-top      20
+                   :background-color "#e8ecf8"}
+       [balance-display {:padding-left 16} usd-value (i18n/label :t/usd-currency) (i18n/label :t/value) 0.05]
+       [line-chart {:width    300
+                    :height   100
+                    :x-labels (create-x-labels)
+                    :y-labels (create-y-labels 5 data)
+                    :data     data}]])))
 
 (def tabs-list
   [{:view-id :wallet-my-token

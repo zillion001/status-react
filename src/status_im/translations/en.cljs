@@ -307,6 +307,7 @@
    :wallet-insufficient-funds             "Insufficient funds"
    :wallet-my-token                       "My {{symbol}}"
    :wallet-market-value                   "Market value"
+   :value                                 "Value"
    :request-transaction                   "Request transaction"
    :send-request                          "Send request"
    :share                                 "Share"

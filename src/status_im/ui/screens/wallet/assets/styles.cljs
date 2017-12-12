@@ -36,25 +36,25 @@
    :align-items     :center
    :justify-content :center})
 
-(def total-balance
+(def main-value
   {:flex-direction :row})
 
-(def total-balance-value
+(def main-value-amount
   {:font-size 37
    :color     styles/color-black})
 
-(defstyle total-balance-currency
+(defstyle main-value-currency
   {:font-size   37
    :margin-left 9
    :color       styles/color-gray4
    :android     {:letter-spacing 1.5}
    :ios         {:letter-spacing 1.16}})
 
-(def value-variation
+(def change
   {:flex-direction :row
    :align-items    :center})
 
-(defstyle value-variation-title
+(defstyle change-description
   {:font-size 14
    :color     styles/color-gray4
    :android   {:letter-spacing -0.18}
