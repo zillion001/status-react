@@ -15,12 +15,21 @@
        (if (or me? seen-online-recently?) time/hour 0)))) ; the user was online recently => increase priority
 
 
-(defn- get-discoveries-by-tags [discoveries search-tags]
-  ;;todo check
-  (filter #(some (:tags %) search-tags)
-          (vals discoveries)))
+(defn- get-discoveries-by-tags [discoveries-by-tags search-tags]
+  (reduce (fn [acc search-tag]
+            (concat acc (get discoveries-by-tags search-tag [])))
+          []
+          search-tags))
 
 (reg-sub :discover/discoveries :discoveries)
+
+(reg-sub :discover/discoveries-with-priority
+  :<- [:discover/discoveries]
+  :<- [:chats]
+  :<- [:get-contacts]
+  :<- [:get :current-public-key]
+  (fn [[discoveries chats contacts current-public-key]]
+    (map #(assoc % :priority (calculate-priority chats current-public-key contacts %)) (vals discoveries))))
 
 (reg-sub :discover/search-tags :discover-search-tags)
 
@@ -32,14 +41,6 @@
             #{}
             (vals discoveries))))
 
-(reg-sub :discover/top-discovery-per-tag
-  :<- [:discover/discoveries]
-  :<- [:discover/tags]
-  (fn [[discoveries tags] [_ limit]]
-    (for [tag tags]
-      (let [results (get-discoveries-by-tags discoveries #{tag})]
-        [tag {:discovery (first results)
-              :total     (count results)}]))))
 
 ;; TODO(yenda) this is not really the most recent discoveries
 ;; it's just all off them
@@ -48,22 +49,47 @@
   (fn [discoveries]
     (sort-by :created-at > (vals discoveries))))
 
-;; TODO(yenda) this is not really the most popular tags
-;; it's just the first ones that are in the tags set
-(reg-sub :discover/popular-tags
-  :<- [:discover/tags]
-  (fn [tags [_ limit]]
-    (take limit tags)))
+(reg-sub :discover/discoveries-by-tags
+  :<- [:discover/discoveries-with-priority]
+  (fn [discoveries]
+    (reduce (fn [discoveries-by-tags {:keys [tags] :as discovery}]
+              (reduce (fn [discoveries-by-tags tag]
+                        (update discoveries-by-tags tag conj discovery))
+                      discoveries-by-tags
+                      tags))
+            {}
+            discoveries)))
+
+(reg-sub :discover/most-popular-hashtags
+  :<- [:discover/discoveries-by-tags]
+  (fn [discoveries]
+    (->> discoveries
+         (sort-by (comp count val) >)
+         (take 10))))
+
+(reg-sub :discover/popular-hashtags-preview
+  :<- [:discover/most-popular-hashtags]
+  (fn [most-popular-hashtags]
+    (->> most-popular-hashtags
+         (map (fn [[tag discoveries]] {:tag       tag
+                                       :total     (count discoveries)
+                                       :discovery (first (sort-by :priority > discoveries))})))))
+
+(reg-sub :discover/all-popular-hashtags
+  :<- [:discover/most-popular-hashtags]
+  (fn [most-popular-hashtags]
+    {:tags        (map first most-popular-hashtags)
+     :discoveries (sort-by :priority > (apply concat (map second most-popular-hashtags)))}))
+
 
 (reg-sub :discover/search-results
-  :<- [:discover/discoveries]
+  :<- [:discover/discoveries-by-tags]
   :<- [:discover/search-tags]
   :<- [:chats]
   :<- [:get-contacts]
   :<- [:get :current-public-key]
   (fn [[discoveries search-tags chats contacts current-public-key] [_ limit]]
     (let [discoveries (->> (get-discoveries-by-tags discoveries search-tags)
-                           (map #(assoc % :priority (calculate-priority chats current-public-key contacts %)))
                            (sort-by :priority >))]
       {:discoveries (take limit discoveries)
        :tags        search-tags
@@ -77,4 +103,3 @@
       (->> (:contacts/contacts db)
            (filter #(-> % key dapp?))
            (into {})))))
-

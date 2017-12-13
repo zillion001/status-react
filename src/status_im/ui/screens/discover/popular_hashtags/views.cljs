@@ -24,10 +24,10 @@
                     :shows-horizontal-scroll-indicator false
                     :default-separator?                false}]])
 
-(defview discover-all-hashtags []
+(defview discover-all-popular-hashtags []
   (letsubs [current-account            [:get-current-account]
             contacts                   [:get-contacts]
-            {:keys [discoveries tags]} [:discover/search-results 10]]
+            {:keys [discoveries tags]} [:discover/all-popular-hashtags]]
     [react/view styles/all-recent-container
      [toolbar/toolbar {}
       toolbar/default-nav-back

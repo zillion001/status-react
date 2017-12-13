@@ -43,8 +43,8 @@
                           (when-not (string/blank? text)
                             (re-frame/dispatch [:discover/search-tags-results-view text])))}])
 
-(defn top-status-for-popular-hashtag [{:keys [tag item current-account contacts]}]
-  (let [{:keys [discovery total]} item]
+(defn top-status-for-popular-hashtag [{:keys [popular-hashtag current-account contacts]}]
+  (let [{:keys [tag discovery total]} popular-hashtag]
     [react/view styles/popular-list-container
      [react/view styles/row
       [react/view {}
@@ -63,21 +63,19 @@
                                      :current-account current-account
                                      :contacts        contacts}]]))
 
-(defn popular-hashtags-preview [{:keys [popular-discoveries popular-tags contacts current-account]}]
-  (let [has-content? (seq popular-tags)
-        tags (map :name popular-tags)]
+(defn popular-hashtags-preview [{:keys [popular-hashtags contacts current-account]}]
+  (let [has-content? (seq popular-hashtags)]
     [react/view styles/popular-container
-     [components/title :t/popular-tags :t/all #(re-frame/dispatch [:discover/popular-tags-view popular-tags]) has-content?]
+     [components/title :t/popular-tags :t/all #(re-frame/dispatch [:navigate-to :discover-all-popular-hashtags]) has-content?]
      (if has-content?
        [carousel/carousel {:pageStyle styles/carousel-page-style
                            :gap       8
                            :sneak     16
-                           :count     (count popular-tags)}
-        (for [[tag item] popular-discoveries]
-          [top-status-for-popular-hashtag {:tag             tag
-                                           :item            item
-                                           :contacts        contacts
-                                           :current-account current-account}])]
+                           :count     (count popular-hashtags)}
+        (for [popular-hashtag popular-hashtags]
+          [top-status-for-popular-hashtag {:popular-hashtag         popular-hashtag
+                                           :contacts                contacts
+                                           :current-account         current-account}])]
        [empty-section :empty-hashtags :t/no-hashtags-discovered-title :t/no-hashtags-discovered-body])]))
 
 (defn recent-statuses-preview [{:keys [current-account contacts discoveries]}]
@@ -150,8 +148,7 @@
             current-account     [:get-current-account]
             discoveries         [:discover/recent-discoveries]
             all-dapps           [:discover/all-dapps]
-            popular-tags        [:discover/popular-tags 10]
-            popular-discoveries [:discover/top-discovery-per-tag 10]]
+            popular-hashtags    [:discover/popular-hashtags-preview]]
     [react/view styles/discover-container
      [toolbar-view (and current-view?
                         (= show-search :discover)) search-text]
@@ -159,9 +156,8 @@
       [recent-statuses-preview {:contacts        contacts
                                 :current-account current-account
                                 :discoveries     discoveries}]
-      [popular-hashtags-preview {:popular-tags        popular-tags
-                                 :popular-discoveries popular-discoveries
-                                 :contacts            contacts
-                                 :current-account     current-account}]
+      [popular-hashtags-preview {:popular-hashtags popular-hashtags
+                                 :contacts         contacts
+                                 :current-account  current-account}]
       [all-dapps/preview all-dapps]
       [public-chats-teaser]]]))

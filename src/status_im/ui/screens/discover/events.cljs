@@ -116,7 +116,8 @@
   :init-discoveries
   [(re-frame/inject-cofx :data-store/discoveries)]
   (fn [{:keys [data-store/discoveries db]} _]
-    {:db (assoc db :discoveries discoveries)}))
+    {:db       (assoc db :discoveries discoveries)
+     :dispatch [:request-discoveries]}))
 
 (handlers/register-handler-fx
   :request-discoveries
