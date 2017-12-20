@@ -60,7 +60,12 @@
       [react/view components.styles/flex
         [react/view styles/network-container
          [react/view styles/qr-container
-          [qr-code amount symbol]]]
+          [react/with-activity-indicator
+           {:width           256
+            :height          256
+            :justify-content :center
+            :align-items     :center}
+           [qr-code amount symbol]]]]
         [react/view wallet.styles/choose-wallet-container
          [components/choose-wallet]]
         [react/view wallet.styles/amount-container
