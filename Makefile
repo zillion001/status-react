@@ -1,5 +1,7 @@
 .PHONY: react-native test
 
+## TODO: Generally reduce dimensionality, too many options, unclear order
+
 help: ##@other Show this help
 	@perl -e '$(HELP_FUN)' $(MAKEFILE_LIST)
 
@@ -89,6 +91,8 @@ repl-android: ##@repl Start REPL for Android
 
 #--------------
 # Run
+# TODO: Redirect/hide logs to target dir, too noisy
+# TODO: Why is this happening here as opposed to in deps stage? `Downloading realm-sync-cocoa-2.1.4.tar.xz`
 # -------------
 run-android: ##@run Run Android build
 	react-native run-android
@@ -98,6 +102,7 @@ run-ios: ##@run Run iOS build
 
 #--------------
 # Tests
+# TODO Try add protocol tests, might be local env
 #--------------
 
 test: ##@test Run tests once in NodeJS
@@ -120,3 +125,19 @@ android-ports: ##@other Add reverse proxy to Android Device/Simulator
 	adb reverse tcp:8081 tcp:8081
 	adb reverse tcp:3449 tcp:3449
 	adb reverse tcp:4567 tcp:4567
+
+#--------------
+# Experiment
+# time (make clean && make deps) => 12m.
+#--------------
+clean: ##@experiment Clean
+	rm -rf node_modules
+	npm cache clear --force
+	rm -rf package-lock.json
+	rm -rf build
+
+deps: ##@experiment Deps iOS
+	npm install
+	cd ios && pod install && cd ..
+	lein deps && ./re-natal use-ios-device real && ./re-natal use-figwheel && lein re-frisk use-re-natal
+	mvn -f modules/react-native-status/ios/RCTStatus dependency:unpack
