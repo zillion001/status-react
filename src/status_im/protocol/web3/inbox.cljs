@@ -8,9 +8,6 @@
 (def peers (atom #{}))
 (def trusted-peers (atom #{}))
 
-;; TODO(oskarth): Hardcoded to local enode for preMVP, will be in bootnodes later
-(def default-enode "enode://0f51d75c9469de0852571c4618fe151265d4930ea35f968eb1a12e69c12f7cbabed856a12b31268a825ca2c9bafa47ef665b1b17be1ab71de83338c4b7439b24@127.0.0.1:30303")
-
 ;; NOTE(dmitryn) Expects JSON response like:
 ;; {"error": "msg"} or {"result": true}
 (defn- parse-json [s]
