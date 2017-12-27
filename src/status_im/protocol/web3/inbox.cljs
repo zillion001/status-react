@@ -23,11 +23,10 @@
     (let [{:keys [error result]} (parse-json response)]
       ;; NOTE(dmitryn): AddPeer() may return {"error": ""}
       ;; assuming empty error is a success response
-      (if (or (nil? error)
-              (string/blank? error))
+      (if (seq error)
+        (error-fn error)
         (doseq [f success-fns]
-          (f result))
-        (error-fn error)))))
+          (f result))))))
 
 (defn add-peer [enode success-fn error-fn]
   (if (@peers enode)
