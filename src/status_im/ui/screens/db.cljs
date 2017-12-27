@@ -37,7 +37,10 @@
              :prices                     {}
              :notifications              {}
              :network                    constants/default-network
-             :networks/networks          constants/default-networks})
+             :networks/networks          constants/default-networks
+             :inbox/wnode                constants/default-wnode
+             :inbox/topic                constants/inbox-topic
+             :inbox/password             constants/inbox-password})
 
 ;;;;GLOBAL
 
@@ -87,6 +90,11 @@
 (spec/def :node/after-start (spec/nilable vector?))
 (spec/def :node/after-stop (spec/nilable vector?))
 
+;;;;OFFLINE INBOX
+(spec/def :inbox/wnode (spec/map-of keyword? string?))
+(spec/def :inbox/topic string?)
+(spec/def :inbox/password string?)
+
 (spec/def ::db (allowed-keys
                  :opt
                  [:contacts/contacts
@@ -116,7 +124,10 @@
                   :networks/selected-network
                   :networks/networks
                   :node/after-start
-                  :node/after-stop]
+                  :node/after-stop
+                  :inbox/wnode
+                  :inbox/topic
+                  :inbox/password]
                  :opt-un
                  [::current-public-key
                   ::modal
