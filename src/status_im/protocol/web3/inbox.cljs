@@ -18,22 +18,22 @@
     (catch :default e
       {:error (.-message e)})))
 
-(defn- response-handler [error-fn success-fns]
+(defn- response-handler [error-fn success-fn]
   (fn [response]
     (let [{:keys [error result]} (parse-json response)]
       ;; NOTE(dmitryn): AddPeer() may return {"error": ""}
       ;; assuming empty error is a success response
       (if (seq error)
         (error-fn error)
-        (doseq [f success-fns]
-          (f result))))))
+        (success-fn result)))))
 
 (defn add-peer [enode success-fn error-fn]
   (if (@peers enode)
     (success-fn true)
     (status/add-peer enode
-                     (response-handler error-fn
-                                       [#(swap! peers conj enode) success-fn]))))
+                     (response-handler error-fn (fn [result]
+                                                  (swap! peers conj enode)
+                                                  (success-fn result))))))
 
 ;; TODO(oskarth): Use web3 binding to do (.markTrustedPeer web3 enode cb)
 (defn mark-trusted-peer [enode success-fn error-fn]
@@ -45,8 +45,9 @@
                 :params  [enode]}
           payload (.stringify js/JSON (clj->js args))]
       (status/call-web3 payload
-                        (response-handler error-fn
-                                          [#(swap! trusted-peers conj enode) success-fn])))))
+                        (response-handler error-fn (fn [result]
+                                                     (swap! trusted-peers conj enode)
+                                                     (success-fn result)))))))
 
 ;; TODO(oskarth): Use web3 binding instead of raw RPC above, pending binding and deps:
 ;; (.requestMessages (utils/shh web3)
@@ -69,7 +70,7 @@
     (log/info "offline inbox: request-messages args" (pr-str args))
     (log/info "offline inbox: request-messages payload" (pr-str payload))
     (status/call-web3 payload
-                      (response-handler error-fn [success-fn]))))
+                      (response-handler error-fn success-fn))))
 
 (defn initialize! [web3]
   (re-frame/dispatch [:initialize-offline-inbox web3]))
