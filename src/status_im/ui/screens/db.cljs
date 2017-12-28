@@ -12,7 +12,8 @@
             status-im.commands.specs
             status-im.ui.screens.profile.db
             status-im.ui.screens.discover.db
-            status-im.ui.screens.network-settings.db))
+            status-im.ui.screens.network-settings.db
+            status-im.ui.screens.offline-messaging-settings.db))
 
 ;; initial state of app-db
 (def app-db {:current-public-key         ""
@@ -89,11 +90,6 @@
 
 (spec/def :node/after-start (spec/nilable vector?))
 (spec/def :node/after-stop (spec/nilable vector?))
-
-;;;;OFFLINE INBOX
-(spec/def :inbox/wnode (spec/map-of keyword? string?))
-(spec/def :inbox/topic string?)
-(spec/def :inbox/password string?)
 
 (spec/def ::db (allowed-keys
                  :opt
