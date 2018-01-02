@@ -128,11 +128,11 @@
          :dispatch-n [[:stop-debugging]
                       [:initialize-account
                        address
-                       (when (or new-account? recover-in-progress?)
-                         [[:chat-received-message/add console-chat/phone-number-request-message]
-                          [:chat-received-message/add console-chat/shake-your-phone-message]])]
+                       #_(when (or new-account? recover-in-progress?)
+                           [[:chat-received-message/add console-chat/phone-number-request-message]
+                            [:chat-received-message/add console-chat/shake-your-phone-message]])]
                       [:navigate-to-clean :chat-list]
-                      (if new-account?
-                        [:navigate-to-chat console-chat-id]
-                        [:navigate-to :chat-list])]}
+                      #_(if new-account?
+                          [:navigate-to-chat console-chat-id]
+                          [:navigate-to :chat-list])]}
         (log/debug "Error changing acount: " error)))))

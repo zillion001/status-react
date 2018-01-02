@@ -112,9 +112,10 @@
    (re-frame/inject-cofx ::get-signing-phrase) (re-frame/inject-cofx ::get-status)]
   (fn [{:keys [keypair signing-phrase status db] :as cofx} [{:keys [pubkey address mnemonic]} password]]
     (let [normalized-address (utils.hex/normalize-hex address)
+          name               (get-in db [:accounts/create :name])
           account            {:public-key          pubkey
                               :address             normalized-address
-                              :name                (generate-gfy pubkey)
+                              :name                (or name (generate-gfy pubkey))
                               :status              status
                               :signed-up?          true
                               :updates-public-key  (:public keypair)

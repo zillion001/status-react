@@ -7,7 +7,8 @@
             [status-im.chat.models.commands :as commands-model]
             [status-im.chat.models.unviewed-messages :as unviewed-messages-model]
             [status-im.chat.events.requests :as requests-events]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [status-im.utils.gfycat.core :as gfycat]))
 
 (defn- get-current-account
   [{:accounts/keys [accounts current-account-id]}]
@@ -72,6 +73,9 @@
                                                                     command)))]
         (cond-> (-> fx
                     (update :db add-message-to-db enriched-message chat-identifier)
+                    (assoc :send-desktop-notification {:from    (or (get-in contacts [(:from message) :name])
+                                                                    (gfycat/generate-gfy (:from message)))
+                                                       :content (:content message)})
                     (assoc :save-message (dissoc enriched-message :new?)))
                 command-request?
                 (requests-events/add-request chat-identifier enriched-message))))))

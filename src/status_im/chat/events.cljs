@@ -168,8 +168,7 @@
     (let [{:accounts/keys [account-creation?]} db
           load-default-contacts-event [:load-default-contacts!]]
       (if account-creation?
-        {:db db
-         :dispatch load-default-contacts-event}
+        {:db db} ;:dispatch load-default-contacts-event}
         (let [chat->unviewed-messages (unviewed-messages-model/index-unviewed-messages stored-unviewed-messages)
               chat->message-id->request (reduce (fn [acc {:keys [chat-id message-id] :as request}]
                                                   (assoc-in acc [chat-id message-id] request))
@@ -182,10 +181,9 @@
                                                    :messages (index-messages (get-stored-messages chat-id)))))
                             {}
                             all-stored-chats)]
-          (-> db
-              (assoc :chats chats)
-              init-console-chat
-              (update :dispatch-n conj load-default-contacts-event)))))))
+          {:db (assoc db :chats chats)})))))
+              ;init-console-chat))))))
+              ;(update :dispatch-n conj load-default-contacts-event)))))))
 
 (handlers/register-handler-fx
   :send-seen!
