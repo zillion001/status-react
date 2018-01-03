@@ -15,8 +15,42 @@
                                          console-chat-id]]
             [status-im.utils.random :as random]
             [status-im.utils.handlers :refer [register-handler register-handler-fx] :as u]
-            status-im.chat.events 
-            status-im.chat.handlers.send-message))
+            status-im.chat.events
+            status-im.chat.handlers.send-message
+            [re-frame.core :as re-frame]
+            [status-im.utils.handlers :as handlers]))
+
+(reg-fx
+  ::save-public-chat
+  (fn [chat]
+    (chats/save chat)))
+
+
+(reg-fx
+  ::save-chat
+  (fn [new-chat]
+    (chats/save new-chat)))
+
+(re-frame/reg-cofx
+  ::chat-exists?
+  (fn [coeffects _]
+    (let [[{{:keys [group-id]} :payload}] (:event coeffects)]
+      (assoc coeffects :chat-exists?
+                       (chats/exists? group-id)))))
+
+(re-frame/reg-cofx
+  ::new-update?
+  (fn [coeffects _]
+    (let [[{{:keys [group-id timestamp]} :payload}] (:event coeffects)]
+      (assoc coeffects :new-update?
+                       (chats/new-update? timestamp group-id)))))
+
+(re-frame/reg-cofx
+  ::chat-is-active?
+  (fn [coeffects _]
+    (let [[{{:keys [group-id]} :payload}] (:event coeffects)]
+      (assoc coeffects :chat-is-active?
+                       (chats/is-active? group-id)))))
 
 (defn remove-chat
   [db [_ chat-id]]
@@ -71,28 +105,7 @@
    remove-pending-messages!
    delete-chat!))
 
-(register-handler :update-group-message
-  (u/side-effect!
-   (fn [{:keys [current-public-key web3 chats]}
-        [_ {:keys                                [from]
-            {:keys [group-id keypair timestamp]} :payload}]]
-     (let [{:keys [private public]} keypair]
-       (let [is-active (chats/is-active? group-id)
-             chat      {:chat-id     group-id
-                        :public-key  public
-                        :private-key private
-                        :updated-at  timestamp}]
-         (when (and (= from (get-in chats [group-id :group-admin]))
-                    (or (not (chats/exists? group-id))
-                        (chats/new-update? timestamp group-id)))
-           (dispatch [:update-chat! chat])
-           (when is-active
-             (protocol/start-watching-group!
-              {:web3     web3
-               :group-id group-id
-               :identity current-public-key
-               :keypair  keypair
-               :callback #(dispatch [:incoming-message %1 %2])}))))))))
+
 
 (register-handler
   :update-message-overhead!
@@ -101,11 +114,6 @@
      (if (= network-status :offline)
        (chats/inc-message-overhead chat-id)
        (chats/reset-message-overhead chat-id)))))
-
-(reg-fx
-  ::save-public-chat
-  (fn [chat]
-    (chats/save chat)))
 
 (reg-fx
   ::start-watching-group
@@ -137,10 +145,6 @@
        {:dispatch-n [[:navigate-to-clean :chat-list]
                      [:navigate-to-chat topic]]}))))
 
-(reg-fx
-  ::save-chat
-  (fn [new-chat]
-    (chats/save new-chat)))
 
 (reg-fx
   ::start-listen-group
@@ -208,11 +212,41 @@
        :dispatch-n [[:navigate-to-clean :chat-list]
                     [:navigate-to-chat (:chat-id new-chat)]]})))
 
-(register-handler-fx
+
+(handlers/register-handler-fx
+  :update-group-message
+  [re-frame/trim-v
+   (re-frame/inject-cofx ::chat-exists?)
+   (re-frame/inject-cofx ::new-update?)
+   (re-frame/inject-cofx ::chat-is-active?)]
+  (fn [{{:keys [current-public-key web3 chats]} :db chat-exists? :chat-exists? new-update? :new-update? chat-is-active? :chat-is-active?}
+       [{:keys                                [from]
+         {:keys [group-id keypair timestamp]} :payload}]]
+    (let [{:keys [private public]} keypair]
+      (let [chat      {:chat-id     group-id
+                       :public-key  public
+                       :private-key private
+                       :updated-at  timestamp}]
+        (when (and (= from (get-in chats [group-id :group-admin]))
+                   (or (not chat-exists?)
+                       new-update?))
+          (dispatch [:update-chat! chat])
+          (when chat-is-active?
+            (protocol/start-watching-group!
+              {:web3     web3
+               :group-id group-id
+               :identity current-public-key
+               :keypair  keypair
+               :callback #(dispatch [:incoming-message %1 %2])})))))))
+
+(handlers/register-handler-fx
   :group-chat-invite-received
-  (fn [{{:keys [current-public-key] :as db} :db}
-       [_ {:keys                                                    [from]
-           {:keys [group-id group-name contacts keypair timestamp]} :payload}]]
+  [re-frame/trim-v
+   (re-frame/inject-cofx ::chat-exists?)
+   (re-frame/inject-cofx ::new-update?)]
+  (fn [{{:keys [current-public-key] :as db} :db chat-exists? :chat-exists? new-update? :new-update?}
+       [{:keys                                                    [from]
+         {:keys [group-id group-name contacts keypair timestamp]} :payload}]]
     (let [{:keys [private public]} keypair]
       (let [contacts' (keep (fn [ident]
                               (when (not= ident current-public-key)
@@ -226,13 +260,12 @@
                        :contacts    contacts'
                        :added-to-at timestamp
                        :timestamp   timestamp
-                       :is-active   true}
-            exists?   (chats/exists? group-id)]
-        (when (or (not exists?) (chats/new-update? timestamp group-id))
+                       :is-active   true}]
+        (when (or (not chat-exists?) new-update?)
           {::start-watching-group (merge {:group-id group-id
                                           :keypair keypair}
                                          (select-keys db [:web3 :current-public-key]))
-           :dispatch (if exists?
+           :dispatch (if chat-exists?
                        [:update-chat! chat]
                        [:add-chat group-id chat])})))))
 
