@@ -2,11 +2,11 @@
   (:require [re-frame.core :refer [reg-sub]]
             [status-im.utils.datetime :as time]))
 
-(defn- calculate-priority [chats current-public-key contacts
+(defn- calculate-priority [now-ms chats current-public-key contacts
                            {:keys [whisper-id created-at]}]
   (let [contact               (get contacts whisper-id)
         chat                  (get chats whisper-id)
-        seen-online-recently? (< (- (time/now-ms) (get contact :last-online))
+        seen-online-recently? (< (- now-ms (get contact :last-online))
                                  time/hour)
         me?                   (= current-public-key whisper-id)]
     (+ created-at                                         ; message is newer => priority is higher
@@ -29,7 +29,8 @@
   :<- [:get-contacts]
   :<- [:get :current-public-key]
   (fn [[discoveries chats contacts current-public-key]]
-    (map #(assoc % :priority (calculate-priority chats current-public-key contacts %)) (vals discoveries))))
+    (let [now-ms (time/now-ms)]
+      (map #(assoc % :priority (calculate-priority now-ms chats current-public-key contacts %)) (vals discoveries)))))
 
 (reg-sub :discover/search-tags :discover-search-tags)
 
@@ -78,8 +79,10 @@
 (reg-sub :discover/all-popular-hashtags
   :<- [:discover/most-popular-hashtags]
   (fn [most-popular-hashtags]
-    {:tags        (map first most-popular-hashtags)
-     :discoveries (sort-by :priority > (apply concat (map second most-popular-hashtags)))}))
+    (let [tags        (map first most-popular-hashtags)
+          discoveries (apply concat (map second most-popular-hashtags))]
+      {:tags        tags
+       :discoveries (sort-by :priority > (distinct discoveries))})))
 
 
 (reg-sub :discover/search-results
