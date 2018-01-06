@@ -182,14 +182,6 @@
         {:db                           (add-discover db discover)
          :data-store.discover/save-all [[discover] maximum-number-of-discoveries]}))))
 
-
-(handlers/register-handler-db
- :show-discovery
- (fn [db [_ tags view-id]]
-   (-> db
-       (assoc :discover-search-tags tags)
-       (nav/navigate-to view-id))))
-
 (handlers/register-handler-fx
   :show-status-author-profile
   (fn [{db :db} [_ identity]]
