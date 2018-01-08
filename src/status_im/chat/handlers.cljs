@@ -34,10 +34,10 @@
 
 (defn delete-chat!
   [_ [_ chat-id]]
-  (let [{:keys [debug? group-chat]} (chats/get-by-id chat-id)]
-    (if (and (not debug?) group-chat)
-      (chats/set-inactive chat-id)
-      (chats/delete chat-id))))
+  (let [{:keys [debug?]} (chats/get-by-id chat-id)]
+    (if debug?
+      (chats/delete chat-id)
+      (chats/set-inactive chat-id))))
 
 (defn remove-pending-messages!
   [_ [_ chat-id]]
