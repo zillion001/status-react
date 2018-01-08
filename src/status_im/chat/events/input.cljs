@@ -458,7 +458,7 @@
          (not (input-model/text-ends-with-space? input-text))
          (set-chat-input-text constants/spacing-char :append? true))})
 
-(defn no-command-fx
+(defn plain-text-message-fx
   "no command detected, when not empty, proceed by sending text message without command processing"
   [db cofx input-text current-chat-id current-public-key]
   (when-not (string/blank? input-text)
@@ -490,7 +490,7 @@
           (if (command-complete? chat-command)
             (command-complete-fx db chat-command message-id current-time)
             (command-not-complete-fx db input-text))
-          (no-command-fx db cofx input-text current-chat-id current-public-key))))))
+          (plain-text-message-fx db cofx input-text current-chat-id current-public-key))))))
 
 ;; TODO: remove this handler and leave only helper fn once all invocations are refactored
 (handlers/register-handler-db
