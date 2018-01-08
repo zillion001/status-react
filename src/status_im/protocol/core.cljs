@@ -92,7 +92,7 @@
       (let [options (merge listener-options group)]
         (group/start-watching-group! options)))
     ;; start listening to user's inbox
-    (if config/offline-inbox-enabled?
+    (if true
       (do (log/info "offline inbox: flag enabled")
           (f/add-filter!
             web3

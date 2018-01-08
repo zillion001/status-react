@@ -42,7 +42,8 @@
    {:keys [from group-id chat-id content-type content message-id timestamp clock-value]
     :as   message
     :or   {clock-value 0}}]
-  (let [{:keys [access-scope->commands-responses] :contacts/keys [contacts]} db
+  (let [{:keys [desktop access-scope->commands-responses] :contacts/keys [contacts]} db
+        {:keys [enabled? sound]} (get desktop :notifications)
         {:keys [public-key] :as current-account} (get-current-account db)
         chat-identifier (or group-id chat-id from)]
     ;; proceed with adding message if message is not already stored in realm,
@@ -73,9 +74,11 @@
                                                                     command)))]
         (cond-> (-> fx
                     (update :db add-message-to-db enriched-message chat-identifier)
-                    (assoc :send-desktop-notification {:from    (or (get-in contacts [(:from message) :name])
-                                                                    (gfycat/generate-gfy (:from message)))
-                                                       :content (:content message)})
                     (assoc :save-message (dissoc enriched-message :new?)))
+                enabled?
+                (assoc :send-desktop-notification {:sound   sound
+                                                   :from    (or (get-in contacts [(:from message) :name])
+                                                                (gfycat/generate-gfy (:from message)))
+                                                   :content (:content message)})
                 command-request?
                 (requests-events/add-request chat-identifier enriched-message))))))

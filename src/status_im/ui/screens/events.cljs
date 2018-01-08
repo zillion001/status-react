@@ -252,8 +252,12 @@
         :as db} [_ address]]
     (let [console-contact (get contacts console-chat-id)]
       (cond-> (assoc app-db
+                     ;;DESKTOP
                      :left-view-id :chat-list
                      :logs logs
+                     :desktop {:notifications {:enabled? true
+                                               :sound    :notif02}}
+                     ;;MOBILE
                      :access-scope->commands-responses access-scope->commands-responses
                      :accounts/current-account-id address
                      :layout-height layout-height
@@ -281,7 +285,7 @@
                           [:initialize-sync-listener]
                           [:initialize-chats]
                           [:load-contacts]
-                          [:load-contact-groups] 
+                          [:load-contact-groups]
                           [:init-discoveries]
                           [:initialize-debugging {:address address}]
                           [:send-account-update-if-needed]
