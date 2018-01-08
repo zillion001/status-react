@@ -178,6 +178,7 @@
    re-frame/trim-v])
 
 (defn- prepare-message [clock-value params chat]
+
   (let [{:keys [chat-id identity message]} params
         {:keys [group-chat public?]} chat
         message {:message-id   (random/id)
@@ -190,12 +191,18 @@
                  :clock-value  (clocks-utils/send clock-value)
                  :show?        true}]
     (cond-> message
+            (not group-chat)
+            (assoc :message-type :user-message
+                   :to           chat-id)
+            group-chat
+            (assoc :group-id chat-id)
             (and group-chat public?)
-            (assoc :group-id chat-id :message-type :public-group-user-message)
+            (assoc :message-type :public-group-user-message)
             (and group-chat (not public?))
-            (assoc :group-id chat-id :message-type :group-user-message)
+            (assoc :message-type :group-user-message)
             (not group-chat)
             (assoc :to chat-id :message-type :user-message))))
+
 
 (defn send-message [{{:keys [network-status] :as db} :db
                      :keys                           [now get-stored-chat get-last-clock-value]}
