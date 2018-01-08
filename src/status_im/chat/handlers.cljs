@@ -28,9 +28,11 @@
     (messages/delete-by-chat-id id)))
 
 (defn delete-messages!
-  [{:keys [current-chat-id]} [_ chat-id]]
-  (let [id (or chat-id current-chat-id)]
-    (messages/delete-by-chat-id id)))
+  [{:keys [current-chat-id chats]} [_ chat-id]]
+  (let [id                   (or chat-id current-chat-id)
+        {:keys [group-chat]} (chats/get-by-id chat-id)]
+    (when group-chat
+      (messages/delete-by-chat-id id))))
 
 (defn delete-chat!
   [_ [_ chat-id]]
