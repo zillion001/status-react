@@ -46,7 +46,7 @@
         direct-message? (nil? group-id)]
     ;; proceed with adding message if message is not already stored in realm,
     ;; it's not from current user (outgoing message) and it's for relevant chat
-    ;; (either current active chat or new chat not existing yet)
+    ;; (either current active chat or new chat not existing yet or it's a direct message)
     (when (and (not (message-exists? message-id))
                (not= from public-key)
                (or (pop-up-chat? chat-identifier)
