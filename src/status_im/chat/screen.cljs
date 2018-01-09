@@ -75,15 +75,28 @@
 
 (defview messages-view [chat-id group-chat]
   (letsubs [messages           [:get-chat-messages chat-id]
-            current-public-key [:get-current-public-key]]
-    [list/flat-list {:data                      messages
-                     :render-fn                 #(message-row {:group-chat         group-chat
-                                                               :current-public-key current-public-key
-                                                               :row                %1})
-                     :inverted                  true
-                     :onEndReached              #(re-frame/dispatch [:load-more-messages])
-                     :enableEmptySections       true
-                     :keyboardShouldPersistTaps (if platform/android? :always :handled)}]))
+            current-public-key [:get-current-public-key]
+            opacity            (anim/create-value 0)]
+    {:component-did-mount (fn [component]
+                            (js/setTimeout
+                             #(anim/start (anim/spring opacity {:toValue  1
+                                                                :duration 100}))
+                             (if platform/android? 50 0)))}
+    (let [messages-cnt (count messages)]
+      [react/with-activity-indicator
+       {:style {:flex            1
+                :align-items     :center
+                :justify-content :center}}
+       [react/animated-view {:style {:opacity opacity
+                                     :flex    1}}
+        [list/flat-list {:data                      messages
+                         :render-fn                 #(message-row {:group-chat         group-chat
+                                                                   :current-public-key current-public-key
+                                                                   :row                %1})
+                         :inverted                  true
+                         :onEndReached              #(re-frame/dispatch [:load-more-messages])
+                         :enableEmptySections       true
+                         :keyboardShouldPersistTaps (if platform/android? :always :handled)}]]])))
 
 (defview chat []
   (letsubs [{:keys [chat-id group-chat input-text]} [:get-current-chat]
@@ -99,20 +112,10 @@
                               (let [height (.. event -nativeEvent -layout -height)]
                                 (when (not= height layout-height)
                                   (re-frame/dispatch [:set-layout-height height]))))}
-     [react/with-activity-indicator
-      {:enabled? platform/ios?}
-      [chat-toolbar]]
+     [chat-toolbar]
      (when (= :chat current-view)
-      [react/with-activity-indicator
-       {:style   {:flex            1
-                  :align-items     :center
-                  :justify-content :center}}
-       [messages-view chat-id group-chat]])
-     [react/with-activity-indicator
-      {:style    {:flex            1
-                  :justify-content :center}
-       :enabled? platform/ios?}
-      [input/container {:text-empty? (string/blank? input-text)}]]
+       [messages-view chat-id group-chat])
+     [input/container {:text-empty? (string/blank? input-text)}]
      (when show-actions?
        [actions/actions-view])
      (when show-bottom-info?

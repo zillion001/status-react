@@ -193,7 +193,8 @@
                        [view props])]
     (vec (concat view-element children))))
 
-(views/defview with-activity-indicator [{:keys [timeout style enabled?]} comp]
+(views/defview with-activity-indicator
+  [{:keys [timeout style enabled? preview]} comp]
   (views/letsubs
     [loading (r/atom true)]
     {:component-did-mount (fn []
@@ -204,7 +205,8 @@
                                                (reset! loading false))
                                              timeout)))}
     (if (and (not enabled?) @loading)
-      [view {:style (or style {:justify-content :center
-                               :align-items     :center})}
-       [activity-indicator {:animating true}]]
+      (or preview
+          [view {:style (or style {:justify-content :center
+                                   :align-items     :center})}
+           [activity-indicator {:animating true}]])
       comp)))
