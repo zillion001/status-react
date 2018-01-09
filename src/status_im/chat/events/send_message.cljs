@@ -34,6 +34,13 @@
   (fn [value]
    (protocol/send-message! value)))
 
+(re-frame/reg-fx
+  :update-message-overhead!
+  (fn [[chat-id network-status]]
+    (if (= network-status :offline)
+      (chats-store/inc-message-overhead chat-id)
+      (chats-store/reset-message-overhead chat-id))))
+
 ;;;; Handlers
 
 (handlers/register-handler-fx
