@@ -90,7 +90,8 @@
             show-actions?                           [:get-current-chat-ui-prop :show-actions?]
             show-bottom-info?                       [:get-current-chat-ui-prop :show-bottom-info?]
             show-emoji?                             [:get-current-chat-ui-prop :show-emoji?]
-            layout-height                           [:get :layout-height]]
+            layout-height                           [:get :layout-height]
+            current-view                            [:get :view-id]]
     {:component-did-mount    #(re-frame/dispatch [:check-and-open-dapp!])
      :component-will-unmount #(re-frame/dispatch [:set-chat-ui-props {:show-emoji? false}])}
     [react/view {:style style/chat-view
@@ -99,17 +100,18 @@
                                 (when (not= height layout-height)
                                   (re-frame/dispatch [:set-layout-height height]))))}
      [react/with-activity-indicator
-      {}
+      {:enabled? platform/ios?}
       [chat-toolbar]]
+     (when (= :chat current-view)
+      [react/with-activity-indicator
+       {:style   {:flex            1
+                  :align-items     :center
+                  :justify-content :center}}
+       [messages-view chat-id group-chat]])
      [react/with-activity-indicator
-      {:timeout 150
-       :style   {:flex        1
-                 :align-items :center
-                 :justify-content :center}}
-      [messages-view chat-id group-chat]]
-     [react/with-activity-indicator
-      {:style {:flex            1
-               :justify-content :center}}
+      {:style    {:flex            1
+                  :justify-content :center}
+       :enabled? platform/ios?}
       [input/container {:text-empty? (string/blank? input-text)}]]
      (when show-actions?
        [actions/actions-view])

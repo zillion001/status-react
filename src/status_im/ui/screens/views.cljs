@@ -145,7 +145,9 @@
                       current-view))
               [view {:flex 1}
                [wrap-comp main-tabs :main-tabs current-view]
-               [wrap-and-hide-comp chat :chat current-view]
+               [(if status-im.utils.platform/android?
+                  wrap-comp
+                  wrap-and-hide-comp) chat :chat current-view]
                [wrap-and-hide-comp
                 [view {:flex 1}
                  [wrap-comp my-profile :my-profile current-view]
